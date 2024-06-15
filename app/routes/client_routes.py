@@ -1,56 +1,65 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models.client import Client
-from app.models.vehicle import Vehicle
+from app.schemas.client_schema import client_schema, clients_schema
+from marshmallow import ValidationError
 
 bp = Blueprint('client_routes', __name__, url_prefix='/clients')
 
 @bp.route('', methods=['POST'])
 def create_client():
+  try:
     data = request.json
-    new_client = Client(name=data['name'])
+    client_data = client_schema.load(data, session=db.session)
+    new_client = Client(name=client_data.name)
     db.session.add(new_client)
     db.session.commit()
-    return jsonify({'id': new_client.id}), 201
+    return jsonify(client_schema.dump(new_client)), 201
+  except ValidationError as err:
+    return jsonify(err.messages), 400
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"error": "An error occurred while creating the client.", "message": str(e)}), 500
 
 @bp.route('', methods=['GET'])
 def get_clients():
-    clients = Client.query.all()
-    response = []
-    for client in clients:
-        vehicles = [{'id': vehicle.id, 'color': vehicle.color, 'model': vehicle.model} for vehicle in client.vehicles]
-        client_data = {
-            'id': client.id,
-            'name': client.name,
-            'sales_opportunity': client.sales_opportunity,
-            'vehicles': vehicles
-        }
-        response.append(client_data)
-    return jsonify(response)
+  clients = Client.query.all()
+  return jsonify(clients_schema.dump(clients))
 
 @bp.route('/<uuid:client_id>', methods=['GET'])
 def get_client(client_id):
-    client = Client.query.get_or_404(client_id)
-    vehicles = [{'id': vehicle.id, 'color': vehicle.color, 'model': vehicle.model} for vehicle in client.vehicles]
-    client_data = {
-        'id': client.id,
-        'name': client.name,
-        'sales_opportunity': client.sales_opportunity,
-        'vehicles': vehicles
-    }
-    return jsonify(client_data)
+  client = Client.query.get_or_404(client_id)
+  vehicles = [{'id': vehicle.id, 'color': vehicle.color, 'model': vehicle.model} for vehicle in client.vehicles]
+  client_data = {
+    'id': client.id,
+    'name': client.name,
+    'sales_opportunity': client.sales_opportunity,
+    'vehicles': vehicles
+  }
+  return jsonify(client_data)
 
 @bp.route('/<uuid:client_id>', methods=['PUT'])
 def update_client(client_id):
+  try:
     client = Client.query.get_or_404(client_id)
     data = request.json
-    client.name = data.get('name', client.name)
+    client_data = client_schema.load(data, partial=True, session=db.session)
+    client.name = client_data.name
     db.session.commit()
-    return jsonify({'id': client.id, 'name': client.name, 'sales_opportunity': client.sales_opportunity})
+    return jsonify(client_schema.dump(client))
+  except ValidationError as err:
+    return jsonify(err.messages), 400
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"error": "An error occurred while updating the client.", "message": str(e)}), 500
 
 @bp.route('/<uuid:client_id>', methods=['DELETE'])
 def delete_client(client_id):
+  try:
     client = Client.query.get_or_404(client_id)
     db.session.delete(client)
     db.session.commit()
     return '', 204
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"error": "An error occurred while deleting the client.", "message": str(e)}), 500
