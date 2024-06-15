@@ -29,14 +29,7 @@ def get_clients():
 @bp.route('/<uuid:client_id>', methods=['GET'])
 def get_client(client_id):
   client = Client.query.get_or_404(client_id)
-  vehicles = [{'id': vehicle.id, 'color': vehicle.color, 'model': vehicle.model} for vehicle in client.vehicles]
-  client_data = {
-    'id': client.id,
-    'name': client.name,
-    'sales_opportunity': client.sales_opportunity,
-    'vehicles': vehicles
-  }
-  return jsonify(client_data)
+  return jsonify(client_schema.dump(client))
 
 @bp.route('/<uuid:client_id>', methods=['PUT'])
 def update_client(client_id):
