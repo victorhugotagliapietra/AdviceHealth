@@ -7,4 +7,4 @@ class Client(db.Model):
   id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
   name = db.Column(db.String(255), nullable=False)
   sales_opportunity = db.Column(db.Boolean, default=True)
-  vehicles = db.relationship('Vehicle', backref='owner', lazy=True)
+  vehicles = db.relationship('Vehicle', backref='owner', cascade="all, delete-orphan", lazy=True)
