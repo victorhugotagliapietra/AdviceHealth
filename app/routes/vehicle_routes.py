@@ -5,6 +5,8 @@ from app.models.client import Client
 from app.schemas.vehicle_schema import vehicle_schema, vehicles_schema
 from marshmallow import ValidationError
 
+from app.services.update_sales_opportunity import update_sales_opportunity
+
 bp = Blueprint('vehicle_routes', __name__, url_prefix='/vehicles')
 
 @bp.route('', methods=['POST'])
@@ -12,7 +14,8 @@ def create_vehicle():
   try:
     data = request.json
     vehicle_data = vehicle_schema.load(data, session=db.session)
-    client = Client.query.get_or_404(vehicle_data.client_id)
+    client_id = str(vehicle_data.client_id)
+    client = Client.query.get_or_404(client_id)
     if len(client.vehicles) >= 3:
       return jsonify({'error': 'Client can have at most 3 vehicles'}), 400
     new_vehicle = Vehicle(
@@ -22,8 +25,10 @@ def create_vehicle():
     )
     db.session.add(new_vehicle)
     db.session.commit()
+    update_sales_opportunity(client)
     return jsonify(vehicle_schema.dump(new_vehicle)), 201
   except ValidationError as err:
+    db.session.rollback()
     return jsonify(err.messages), 400
   except Exception as e:
     db.session.rollback()
@@ -50,6 +55,7 @@ def update_vehicle(vehicle_id):
     db.session.commit()
     return jsonify(vehicle_schema.dump(vehicle))
   except ValidationError as err:
+    db.session.rollback()
     return jsonify(err.messages), 400
   except Exception as e:
     db.session.rollback()
@@ -59,8 +65,11 @@ def update_vehicle(vehicle_id):
 def delete_vehicle(vehicle_id):
   try:
     vehicle = Vehicle.query.get_or_404(vehicle_id)
+    client_id = vehicle.client_id
     db.session.delete(vehicle)
     db.session.commit()
+    client = Client.query.get_or_404(client_id)
+    update_sales_opportunity(client)
     return '', 204
   except Exception as e:
     db.session.rollback()
