@@ -1,6 +1,5 @@
 import pytest
 from app.models.vehicle import Vehicle
-from app.models.client import Client
 
 def test_create_vehicle(test_client, auth_header):
   client_response = test_client.post('/clients', json={'name': 'Test Client for Vehicle'}, headers=auth_header)

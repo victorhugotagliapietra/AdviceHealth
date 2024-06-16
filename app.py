@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import jsonify
 from marshmallow import ValidationError
 from app import create_app
 
