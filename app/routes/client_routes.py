@@ -23,8 +23,21 @@ def create_client():
 
 @bp.route('', methods=['GET'])
 def get_clients():
-  clients = Client.query.all()
-  return jsonify(clients_schema.dump(clients))
+  page = request.args.get('page', 1, type=int)
+  per_page = request.args.get('per_page', 10, type=int)
+  pagination = Client.query.paginate(page=page, per_page=per_page, error_out=False)
+  
+  clients = pagination.items
+  total_pages = pagination.pages
+  total_items = pagination.total
+
+  return jsonify({
+    'clients': clients_schema.dump(clients),
+    'page': page,
+    'per_page': per_page,
+    'total_pages': total_pages,
+    'total_items': total_items
+  })
 
 @bp.route('/<uuid:client_id>', methods=['GET'])
 def get_client(client_id):

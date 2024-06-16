@@ -42,8 +42,21 @@ def create_vehicle():
 
 @bp.route('', methods=['GET'])
 def get_vehicles():
-  vehicles = Vehicle.query.all()
-  return jsonify(vehicles_schema.dump(vehicles))
+  page = request.args.get('page', 1, type=int)
+  per_page = request.args.get('per_page', 10, type=int)
+  pagination = Vehicle.query.paginate(page=page, per_page=per_page, error_out=False)
+  
+  vehicles = pagination.items
+  total_pages = pagination.pages
+  total_items = pagination.total
+
+  return jsonify({
+    'vehicles': vehicles_schema.dump(vehicles),
+    'page': page,
+    'per_page': per_page,
+    'total_pages': total_pages,
+    'total_items': total_items
+  })
 
 @bp.route('/<uuid:vehicle_id>', methods=['GET'])
 def get_vehicle(vehicle_id):
