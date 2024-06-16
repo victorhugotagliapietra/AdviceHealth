@@ -3,15 +3,16 @@ from app import db
 from app.models.client import Client
 from app.schemas.client_schema import client_schema, clients_schema
 from marshmallow import ValidationError
+from flask_jwt_extended import jwt_required
 
 bp = Blueprint('client_routes', __name__, url_prefix='/clients')
 
 @bp.route('', methods=['POST'])
+@jwt_required()
 def create_client():
   try:
     data = request.json
-    client_data = client_schema.load(data, session=db.session)
-    new_client = Client(name=client_data.name)
+    new_client = Client(name=data['name'])
     db.session.add(new_client)
     db.session.commit()
     return jsonify(client_schema.dump(new_client)), 201
@@ -22,6 +23,7 @@ def create_client():
     return jsonify({"error": "An error occurred while creating the client.", "message": str(e)}), 500
 
 @bp.route('', methods=['GET'])
+@jwt_required()
 def get_clients():
   page = request.args.get('page', 1, type=int)
   per_page = request.args.get('per_page', 10, type=int)
@@ -40,11 +42,15 @@ def get_clients():
   })
 
 @bp.route('/<uuid:client_id>', methods=['GET'])
+@jwt_required()
 def get_client(client_id):
-  client = Client.query.get_or_404(client_id)
+  client = db.session.get(Client, client_id)
+  if client is None:
+    return jsonify({'error': 'Client not found'}), 404
   return jsonify(client_schema.dump(client))
 
 @bp.route('/<uuid:client_id>', methods=['PUT'])
+@jwt_required()
 def update_client(client_id):
   try:
     client = Client.query.get_or_404(client_id)
@@ -60,6 +66,7 @@ def update_client(client_id):
     return jsonify({"error": "An error occurred while updating the client.", "message": str(e)}), 500
 
 @bp.route('/<uuid:client_id>', methods=['DELETE'])
+@jwt_required()
 def delete_client(client_id):
   try:
     client = Client.query.get_or_404(client_id)

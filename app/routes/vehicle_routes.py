@@ -5,18 +5,20 @@ from app.models.vehicle import Vehicle
 from app.models.client import Client
 from app.schemas.vehicle_schema import vehicle_schema, vehicles_schema
 from marshmallow import ValidationError
+from flask_jwt_extended import jwt_required
 
 from app.services.update_sales_opportunity import update_sales_opportunity
 
 bp = Blueprint('vehicle_routes', __name__, url_prefix='/vehicles')
 
 @bp.route('', methods=['POST'])
+@jwt_required()
 def create_vehicle():
   try:
     data = request.json
     vehicle_data = vehicle_schema.load(data, session=db.session)
-    client_id = str(vehicle_data.client_id)
-    client = Client.query.get(client_id)
+    vehicle_data = vehicle_schema.load(data, session=db.session)
+    client = db.session.get(Client, vehicle_data.client_id)
     if not client:
       raise ClientError('Client not found', 404, 'This Client does not exist!')
     if len(client.vehicles) >= 3:
@@ -41,6 +43,7 @@ def create_vehicle():
     return jsonify({"error": "An error occurred while creating the vehicle.", "message": str(e)}), 500
 
 @bp.route('', methods=['GET'])
+@jwt_required()
 def get_vehicles():
   page = request.args.get('page', 1, type=int)
   per_page = request.args.get('per_page', 10, type=int)
@@ -59,11 +62,15 @@ def get_vehicles():
   })
 
 @bp.route('/<uuid:vehicle_id>', methods=['GET'])
+@jwt_required()
 def get_vehicle(vehicle_id):
-  vehicle = Vehicle.query.get_or_404(vehicle_id)
+  vehicle = db.session.get(Vehicle, vehicle_id)
+  if vehicle is None:
+    return jsonify({'error': 'Vehicle not found'}), 404
   return jsonify(vehicle_schema.dump(vehicle))
 
 @bp.route('/<uuid:vehicle_id>', methods=['PUT'])
+@jwt_required()
 def update_vehicle(vehicle_id):
   try:
     vehicle = Vehicle.query.get_or_404(vehicle_id)
@@ -81,6 +88,7 @@ def update_vehicle(vehicle_id):
     return jsonify({"error": "An error occurred while updating the vehicle.", "message": str(e)}), 500
 
 @bp.route('/<uuid:vehicle_id>', methods=['DELETE'])
+@jwt_required()
 def delete_vehicle(vehicle_id):
   try:
     vehicle = Vehicle.query.get_or_404(vehicle_id)
