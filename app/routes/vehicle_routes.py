@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
+from app.exceptions import ClientError
 from app.models.vehicle import Vehicle
 from app.models.client import Client
 from app.schemas.vehicle_schema import vehicle_schema, vehicles_schema
@@ -15,7 +16,9 @@ def create_vehicle():
     data = request.json
     vehicle_data = vehicle_schema.load(data, session=db.session)
     client_id = str(vehicle_data.client_id)
-    client = Client.query.get_or_404(client_id)
+    client = Client.query.get(client_id)
+    if not client:
+      raise ClientError('Client not found', 404, 'This Client does not exist!')
     if len(client.vehicles) >= 3:
       return jsonify({'error': 'Client can have at most 3 vehicles'}), 400
     new_vehicle = Vehicle(
@@ -30,6 +33,9 @@ def create_vehicle():
   except ValidationError as err:
     db.session.rollback()
     return jsonify(err.messages), 400
+  except ClientError as e:
+    db.session.rollback()
+    return jsonify(e.to_dict()), e.status
   except Exception as e:
     db.session.rollback()
     return jsonify({"error": "An error occurred while creating the vehicle.", "message": str(e)}), 500
