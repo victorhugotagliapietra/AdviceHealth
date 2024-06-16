@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    command: flask run --host=0.0.0.0
+    environment:
+      FLASK_APP: app
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://postgres:123@db:5432/postgres
+      JWT_SECRET_KEY: 3ee9c71fb75a3fe36495c6fe48bb3a8f2edf8590e6ddb73a85e7d7b14cb3084e
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
