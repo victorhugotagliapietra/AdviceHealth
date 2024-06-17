@@ -14,14 +14,14 @@ services:
 
   web:
     build: .
-    command: flask run --host=0.0.0.0
+    command: flask run --port 5678 --host=0.0.0.0
     environment:
       FLASK_APP: app
       FLASK_ENV: development
       DATABASE_URL: postgresql://postgres:123@db:5432/postgres
       JWT_SECRET_KEY: 3ee9c71fb75a3fe36495c6fe48bb3a8f2edf8590e6ddb73a85e7d7b14cb3084e
     ports:
-      - "5000:5000"
+      - "5678:5678"
     depends_on:
       - db
 

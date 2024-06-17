@@ -11,6 +11,6 @@ COPY . .
 ENV FLASK_APP=app
 ENV FLASK_ENV=development
 
-EXPOSE 5000
+EXPOSE 5678
 
 CMD ["flask", "run", "--host=0.0.0.0"]

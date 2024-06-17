@@ -78,7 +78,9 @@ Replace {container_name} with the actual name of your application container.
 
 ### 5. Access the Application
 
-Once the containers are up and running, you can access the application at http://localhost:5000.
+Once the containers are up and running, you can access the application at http://localhost:5678.
+
+If this port is already in use, you can change the port in Dockerfile and docker-compose.yml.
 
 ### 6. API Endpoints
 
