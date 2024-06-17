@@ -24,7 +24,7 @@ cd AdviceHealth
 ### 2. Build DataBase image
 
 1. Add your postgres database credentials in the **config.py ** file
-2. Run the SQL command below in yout postgres database:
+2. Run the SQL command below in your postgres database:
 
 ```
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -66,7 +66,7 @@ To run the automated tests, open a new terminal and execute:
 docker ps
 ```
 
-2. Locate the container name from the list. It will look something like advicehealth_postgres.
+2. Locate the container name from the list. It will look something like advicehealth_db_1.
 
 3. Use the container name in the following command:
 
